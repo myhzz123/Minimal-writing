@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>If I write…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<style>
+:root{--bg:#fafaf8;--fg:#222;--muted:#f1f0ee;--soft:#e8e6e3;--accent:#7b6d57;--btn:#ffffff;--shadow:0 6px 20px rgba(0,0,0,.06);--radius:16px;--range-track:#d8d5d0;--range-thumb:#9a8c76}
+.dark{--bg:#141414;--fg:#f3f3f3;--muted:#1e1e1e;--soft:#252525;--accent:#c7b9a1;--btn:#1d1d1d;--shadow:0 6px 20px rgba(0,0,0,.4);--range-track:#3a3a3a;--range-thumb:#d2c7b2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 "Noto Serif SC","Playfair Display",serif}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--muted);box-shadow:var(--shadow)}
+header h1{margin:0;font-size:18px;letter-spacing:.5px;color:var(--accent)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar, header, button, select, label, input[type=text] { font-family: "Noto Serif SC", "PingFang SC", "Songti SC", serif; }
+.toolbar{display:flex;gap:8px;padding:6px 10px;background:var(--soft);flex-wrap:wrap;position:sticky;top:56px;z-index:9;align-items:center}
+/* make toolbar controls compact and consistent */
+.toolbar > *{flex:0 0 auto;white-space:nowrap}
+.toolbar button, .toolbar select, .toolbar input[type=color], .toolbar label{padding:8px 12px;font-size:15px;border-radius:10px;background:var(--btn);color:var(--fg);box-shadow:var(--shadow);cursor:pointer}
+#refBtn{font-size:15px;padding:8px 12px;font-weight:600;border-radius:10px}
+.toolbar select{min-width:100px;max-width:220px;padding:7px 10px;font-size:14px}
+#fontFamily,#headingFormat{min-width:72px;text-align:center;text-align-last:center;-moz-text-align-last:center}
+.toolbar select{min-width:120px;max-width:200px}
+#fontFamily, #headingFormat { text-align: center; text-align-last: center; -moz-text-align-last: center; }
+#fontFamily option, #headingFormat option { text-align: center; }
+.toolbar label{display:flex;align-items:center;gap:6px}
+.toolbar input[type=range]{height:18px}
+.toolbar .icon{font-weight:700}
+button,select,input[type=color],input[type=range],input[type=text],label{padding:8px 10px;font-size:14px;border:none;border-radius:12px;background:var(--btn);color:var(--fg);box-shadow:var(--shadow);cursor:pointer}
+select,input[type=color],input[type=range]{cursor:pointer}
+input[type=text]{min-width:160px}
+button:active{transform:scale(.98)}
+#exportOptions{display:none;position:absolute;background:var(--btn);box-shadow:var(--shadow);border-radius:12px;padding:12px;margin-top:6px;right:16px}
+#exportOptions .row{flex-direction:column;align-items:stretch;gap:8px}
+#editorWrap{display:flex;justify-content:center}
+#editor{width:100%;max-width:860px;min-height:calc(100vh - 220px);padding:32px 28px;outline:none;background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow)}
+.toolbar::after{content:"";display:block;height:1px;background:linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));max-width:860px;width:calc(100% - 40px);margin:8px auto 0;border-radius:2px;box-shadow:0 1px 0 rgba(0,0,0,0.04)}
+#stats{position:fixed;top:calc(56px + 48px);left:0;right:0;width:100%;z-index:40;display:flex;align-items:center;padding:10px 24px;background:var(--soft);font-size:13px;color:var(--accent);border-radius:0;box-shadow:0 4px 12px rgba(0,0,0,0.06);text-align:left;justify-content:flex-start}
+#refPanel{position:fixed;right:24px;bottom:24px;width:380px;height:280px;background:var(--btn);color:var(--fg);border-radius:16px;box-shadow:var(--shadow);display:none;overflow:hidden}
+#refHeader{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--soft);cursor:move}
+#refContent{width:100%;height:calc(100% - 46px);overflow:auto;padding:10px}
+#refContent[contenteditable=true]{outline:none}
+#refResize{position:absolute;right:6px;bottom:6px;width:14px;height:14px;cursor:nwse-resize;opacity:.7}
+#refResize::after{content:"";position:absolute;inset:0;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent)}
+.ripple{position:relative;overflow:hidden}
+.r{position:absolute;border-radius:50%;transform:scale(0);pointer-events:none;opacity:.35;animation:rip .6s ease-out}
+@keyframes rip{to{transform:scale(8);opacity:0}}
+input[type=range]{-webkit-appearance:none;appearance:none;height:20px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--range-track);border-radius:2}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;margin-top:-6px;height:16px;width:16px;border-radius:50%;background:var(--range-thumb);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.icon{font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>If I write…</h1>
+  <div class="row">
+    <button class="ripple" id="autoSaveBtn">自动保存: 开启</button>
+    <button class="ripple" id="saveBtn" style="display:none;">手动保存</button>
+    <button class="ripple" id="undoBtn">撤回</button>
+    <button class="ripple" id="redoBtn">重做</button>
+  </div>
+  <div class="row" style="position:relative;">
+    <button class="ripple" id="darkModeBtn">切换暗黑模式</button>
+    <button class="ripple" id="importBtn">导入文件</button>
+    <input id="importInput" type="file" accept=".txt,.html,.htm" style="display:none" />
+    <button class="ripple" id="exportBtn">导出</button>
+    <div id="exportOptions">
+      <div class="row">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="ripple" data-export="txt">导出为 .txt</button>
+          <button class="ripple" data-export="html">导出为 .html</button>
+          <button class="ripple" data-export="img">导出为 .png</button>
+        </div>
+      </div>
+    </div>
+    <button class="ripple" id="newBtn">新建</button>
+  </div>
+</header>
+<div class="toolbar">
+  <button class="ripple" id="refBtn">参考</button>
+  <select id="fontFamily">
+    <option value="">字体</option>
+    <option value="Noto Serif SC, Playfair Display, serif">思源宋体</option>
+    <option value="Kaiti SC, STKaiti, KaiTi, KaiTi_GB2312, serif">楷体</option>
+    <option value="FangSong, STFangSong, serif">仿宋</option>
+    <option value="Songti SC, Songti TC, STSong, serif">宋体</option>
+    <option value="Microsoft YaHei, Segoe UI, system-ui, sans-serif">雅黑</option>
+    <option value="PingFang SC, -apple-system, system-ui, sans-serif">苹方</option>
+    <option value="Times New Roman, Times, serif">Times New Roman</option>
+    <option value="__import__">+ 导入字体</option>
+  </select>
+  <input type="file" id="fontUploadInput" accept=".woff,.woff2,.ttf,.otf" style="display:none" />
+  <label>字号<input type="range" id="fontSize" min="10" max="64" value="18"></label>
+  <input type="color" id="fontColor" value="#000000" title="文字颜色" />
+  <label>行高<input type="range" id="lineHeight" min="1" max="3" step="0.05" value="1.7"></label>
+  <button class="ripple" data-cmd="bold"><span class="icon">B</span></button>
+  <button class="ripple" data-cmd="italic"><span class="icon">I</span></button>
+  <button class="ripple" data-cmd="underline"><span class="icon">U</span></button>
+  <input type="color" id="highlightColor" value="#fff3b0" title="标记颜色">
+  <button class="ripple" id="markBtn">标记</button>
+  <button class="ripple" id="narrowBtn">窄</button>
+  <button class="ripple" id="wideBtn">宽</button>
+  <label>段落缩进<input type="range" id="indentRange" min="0" max="8" step="0.5" value="0"></label>
+  <select id="headingFormat">
+    <option value="p">正文</option>
+    <option value="h1">标题1</option>
+    <option value="h2">标题2</option>
+    <option value="h3">标题3</option>
+  </select>
+</div>
+<div id="stats">字数: 0 | 时长: 0分钟</div>
+<div id="editorWrap"><div id="editor" contenteditable="true"></div></div>
+<div id="refPanel">
+  <div id="refHeader">
+    <strong>参考资料</strong>
+    <div class="row">
+      <button class="ripple" id="refPaste">粘贴</button>
+      <button class="ripple" id="refImportBtn">导入</button>
+      <button class="ripple" id="refDeleteSel">删除所选</button>
+      <button class="ripple" id="refClear">清空</button>
+      <button class="ripple" id="refClose">关闭</button>
+    </div>
+  </div>
+  <div id="refContent" contenteditable="true" spellcheck="false"></div>
+  <div id="refResize" title="拖拽缩放"></div>
+  <input id="refInput" type="file" accept="image/*,.txt,.html,.htm" style="display:none" />
+</div>
+<script>
+const $=(s,r=document)=>r.querySelector(s);const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const editor=$('#editor');
+const stats=$('#stats');
+const exportOptions=$('#exportOptions');
+const autoSaveBtn=$('#autoSaveBtn');
+const saveBtn=$('#saveBtn');
+const undoBtn=$('#undoBtn');
+const redoBtn=$('#redoBtn');
+const darkModeBtn=$('#darkModeBtn');
+const importBtn=$('#importBtn');
+const importInput=$('#importInput');
+const exportBtn=$('#exportBtn');
+const newBtn=$('#newBtn');
+const fontFamilySel=$('#fontFamily');
+const fontUploadInput=$('#fontUploadInput');
+const fontSizeRange=$('#fontSize');
+const fontColor=$('#fontColor');
+const lineHeightRange=$('#lineHeight');
+const headingSel=$('#headingFormat');
+const indentRange=$('#indentRange');
+const markBtn=$('#markBtn');
+const narrowBtn=$('#narrowBtn');
+const wideBtn=$('#wideBtn');
+const highlightColor=$('#highlightColor');
+const refBtn=$('#refBtn');
+const refPanel=$('#refPanel');
+const refHeader=$('#refHeader');
+const refContent=$('#refContent');
+const refClose=$('#refClose');
+const refImportBtn=$('#refImportBtn');
+const refInput=$('#refInput');
+const refPaste=$('#refPaste');
+const refResize=$('#refResize');
+const refDeleteSel=$('#refDeleteSel');
+const refClear=$('#refClear');
+let autoSave=true;let startTime=Date.now();let saveKey='if_i_write_current_final';
+// defaults for new document
+const DEFAULT_FONT = 'Songti SC, Songti TC, STSong, serif';
+const DEFAULT_FONTSIZE_PX = '18px';
+const DEFAULT_LINEHEIGHT = '1.7';
+const DEFAULT_HIGHLIGHT = '#fff3b0';
+
+function ripple(e){const t=e.currentTarget;const r=document.createElement('span');r.className='r';const rect=t.getBoundingClientRect();const size=Math.max(rect.width,rect.height);r.style.width=r.style.height=size+'px';r.style.left=(e.clientX-rect.left-size/2)+'px';r.style.top=(e.clientY-rect.top-size/2)+'px';r.style.background='currentColor';t.appendChild(r);setTimeout(()=>r.remove(),650);} 
+$$('.ripple').forEach(b=>b.addEventListener('click',ripple));
+function styleToString(obj){return Object.entries(obj).map(([k,v])=>k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+':'+v).join(';')}
+function getSelectionRange(){const sel=window.getSelection();if(!sel||sel.rangeCount===0)return null;return sel.getRangeAt(0)}
+function wrapSelection(styleObj){const range=getSelectionRange();if(!range||range.collapsed)return false;const span=document.createElement('span');Object.assign(span.style,styleObj);try{range.surroundContents(span)}catch(e){const html='<span style="'+styleToString(styleObj)+'">'+range.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>';document.execCommand('insertHTML',false,html)}return true}
+function applyToBlocks(styleObj){const range=getSelectionRange();if(!range)return;const root=range.commonAncestorContainer.nodeType===1?range.commonAncestorContainer:range.commonAncestorContainer.parentElement;const walker=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT,{acceptNode(node){if(!/^P|DIV|H[1-6]$/.test(node.tagName))return NodeFilter.FILTER_SKIP;try{if(range.intersectsNode(node))return NodeFilter.FILTER_ACCEPT}catch(e){const r=document.createRange();r.selectNodeContents(node);if(!(r.compareBoundaryPoints(Range.END_TO_START,range)<=0||r.compareBoundaryPoints(Range.START_TO_END,range)>=0))return NodeFilter.FILTER_ACCEPT}return NodeFilter.FILTER_SKIP}},false);const blocks=[];while(walker.nextNode())blocks.push(walker.currentNode);if(blocks.length===0){let el=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;while(el&&!/^P|DIV|H[1-6]$/.test(el.tagName))el=el.parentElement;if(el)blocks.push(el)}blocks.forEach(b=>Object.assign(b.style,styleObj))}
+function sanitizeFilename(name){if(!name) return '';let s=name.trim();s=s.replace(/\s+/g,' ');s=s.replace(/[\\/:*?"<>|]+/g,'-');if(s.length>60) s=s.slice(0,60);while(s.endsWith('.')||s.endsWith(' '))s=s.slice(0,-1);return s||''}
+function filenameFromContent(){const text=editor.innerText||'';const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);if(lines.length===0) return '';
+let first=lines[0]; if(first.length>60) first=first.slice(0,60);
+return sanitizeFilename(first);
+}
+function getExportFilename(){const fromContent=filenameFromContent();if(fromContent) return fromContent;const now=new Date();const ts=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;return `IfIWrite_${ts}`} 
+function exportContent(type){const base=getExportFilename();if(type==='img'){if(typeof html2canvas!=='function'){alert('导出图片不可用');return}html2canvas(editor,{backgroundColor:getComputedStyle(document.body).backgroundColor,scale:2}).then(canvas=>{const a=document.createElement('a');a.download=`${base}.png`;a.href=canvas.toDataURL('image/png');a.click()});return}
+const content= type==='txt' ? editor.innerText : editor.innerHTML;
+let blob;if(type==='txt') blob=new Blob([content],{type:'text/plain;charset=utf-8'}); else blob=new Blob([content],{type:'text/html;charset=utf-8'});
+const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${base}.${type}`;a.click();
+}
+function saveDoc(){localStorage.setItem(saveKey,editor.innerHTML)}
+function loadDoc(){const s=localStorage.getItem(saveKey);if(s)editor.innerHTML=s}
+function updateStats(){const text=editor.innerText.replace(/\s+/g,'').trim();const words=text.length;const minutes=Math.floor((Date.now()-startTime)/60000);stats.textContent=`字数: ${words} | 时长: ${minutes}分钟`}
+
+autoSaveBtn.onclick=()=>{autoSave=!autoSave;autoSaveBtn.textContent=`自动保存: ${autoSave?'开启':'关闭'}`;saveBtn.style.display=autoSave?'none':'inline-block'};
+saveBtn.onclick=saveDoc;
+undoBtn.onclick=()=>document.execCommand('undo');
+redoBtn.onclick=()=>document.execCommand('redo');
+darkModeBtn.onclick=()=>{document.documentElement.classList.toggle('dark')};
+importBtn.onclick=()=>importInput.click();
+importInput.onchange=async e=>{const f=e.target.files[0];if(!f)return;const text=await f.text();if(/<\s*html|<\s*body|<\s*p[\s>]/i.test(text))editor.innerHTML=text;else editor.textContent=text;if(autoSave)saveDoc();updateStats();importInput.value=''};
+exportBtn.onclick=()=>{const visible=getComputedStyle(exportOptions).display!=='none';exportOptions.style.display=visible?'none':'block'};
+exportOptions.addEventListener('click',e=>{const t=e.target.closest('[data-export]');if(!t) return;exportContent(t.dataset.export);exportOptions.style.display='none'});
+
+// New button: 一键清空并重置为统一默认样式
+newBtn.onclick = ()=>{
+  editor.innerHTML = '';
+  localStorage.removeItem(saveKey);
+  startTime = Date.now();
+  updateStats();
+  // reset visual defaults
+  editor.style.fontFamily = DEFAULT_FONT;
+  editor.style.fontSize = DEFAULT_FONTSIZE_PX;
+  editor.style.lineHeight = DEFAULT_LINEHEIGHT;
+  fontFamilySel.value = 'Songti SC, Songti TC, STSong, serif';
+  fontSizeRange.value = parseInt(DEFAULT_FONTSIZE_PX,10);
+  lineHeightRange.value = DEFAULT_LINEHEIGHT;
+  // reset highlight color
+  highlightColor.value = DEFAULT_HIGHLIGHT;
+  // clear selection and focus
+  editor.focus();
+  const r = document.createRange(); r.selectNodeContents(editor); r.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+};
+
+$$('[data-cmd]').forEach(b=>b.onclick=()=>document.execCommand(b.dataset.cmd,false,null));
+
+// mark toggle: odd click => mark, even click => unmark
+let markToggle=false;
+markBtn.onclick=()=>{
+  markToggle=!markToggle;
+  const sel = window.getSelection();
+  const hasSelection = sel && sel.rangeCount>0 && !sel.isCollapsed;
+  if(markToggle){
+    if(hasSelection) document.execCommand('backColor',false,highlightColor.value);
+    else applyToBlocks({backgroundColor:highlightColor.value});
+    markBtn.textContent='标记（已标记）';
+  } else {
+    if(hasSelection) removeHighlightFromSelection();
+    else applyToBlocks({backgroundColor:''});
+    markBtn.textContent='标记';
+  }
+};
+
+function removeHighlightFromSelection(){const range=getSelectionRange();if(!range||range.collapsed) return false;const common=range.commonAncestorContainer.nodeType===1?range.commonAncestorContainer:range.commonAncestorContainer.parentElement;const walker=document.createTreeWalker(common,NodeFilter.SHOW_ELEMENT,{acceptNode(node){if(node.nodeType!==1) return NodeFilter.FILTER_SKIP;const hasInline=node.style&&node.style.backgroundColor;return hasInline?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}},false);const toClean=[];while(walker.nextNode()){try{if(range.intersectsNode(walker.currentNode))toClean.push(walker.currentNode)}catch(e){const r=document.createRange();r.selectNodeContents(walker.currentNode);if(!(r.compareBoundaryPoints(Range.END_TO_START,range)<=0||r.compareBoundaryPoints(Range.START_TO_END,range)>=0))toClean.push(walker.currentNode)}}if(toClean.length===0){const startAnc=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;const endAnc=range.endContainer.nodeType===1?range.endContainer:range.endContainer.parentElement;if(startAnc===endAnc && startAnc.style && startAnc.style.backgroundColor){startAnc.style.removeProperty('background-color');if(!startAnc.getAttribute('style')) startAnc.removeAttribute('style');return true}return false}toClean.forEach(el=>{el.style.removeProperty('background-color');if(el.getAttribute('style')==='') el.removeAttribute('style');if(el.tagName==='SPAN' && el.attributes.length===0){const parent=el.parentNode;while(el.firstChild) parent.insertBefore(el.firstChild, el);parent.removeChild(el)}});return true}
+
+// font family change preserves other styles
+fontFamilySel.onchange = e => {
+  const v = e.target.value;
+  if (!v) return;
+  const sel = window.getSelection();
+  try {
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('fontName', false, v);
+      document.execCommand('styleWithCSS', false, false);
+    } else {
+      editor.style.fontFamily = v;
+    }
+  } catch (err) {
+    const ok = wrapSelection({ fontFamily: v });
+    if (!ok) editor.style.fontFamily = v;
+  }
+};
+
+// 将字号改成不破坏选区其他格式：统一处理多行选区并保持连续调整能力
+fontSizeRange.oninput = e => {
+  const px = e.target.value + 'px';
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+    try {
+      const range = sel.getRangeAt(0);
+      const common = range.commonAncestorContainer.nodeType===1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+
+      // collect text nodes intersecting the range
+      const walker = document.createTreeWalker(common, NodeFilter.SHOW_TEXT, {
+        acceptNode(node){
+          try{ return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP; }
+          catch(err){ try{ const r=document.createRange(); r.selectNodeContents(node); if(!(r.compareBoundaryPoints(Range.END_TO_START,range)<=0||r.compareBoundaryPoints(Range.START_TO_END,range)>=0)) return NodeFilter.FILTER_ACCEPT }catch(e){} return NodeFilter.FILTER_SKIP; }
+        }
+      }, false);
+
+      const texts = [];
+      while(walker.nextNode()) texts.push(walker.currentNode);
+
+      if(texts.length===0){
+        const extracted = range.extractContents();
+        const wrapper = document.createElement('span');
+        wrapper.style.fontSize = px;
+        wrapper.appendChild(extracted);
+        range.insertNode(wrapper);
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(wrapper);
+        sel.addRange(newRange);
+        return;
+      }
+
+      const spans = [];
+      for(const t of texts){
+        if(!t.nodeValue || t.nodeValue.trim()==='') continue;
+        const parent = t.parentElement;
+        if(parent && parent.tagName==='SPAN' && parent.style && parent.style.fontSize){ parent.style.fontSize = px; spans.push(parent); continue; }
+        const span = document.createElement('span');
+        span.style.fontSize = px;
+        t.parentNode.insertBefore(span, t);
+        span.appendChild(t);
+        spans.push(span);
+      }
+
+      if(spans.length>0){
+        const first = spans[0];
+        const last = spans[spans.length-1];
+        if(first.parentNode && first.parentNode.normalize) first.parentNode.normalize();
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.setStartBefore(first);
+        newRange.setEndAfter(last);
+        sel.addRange(newRange);
+      }
+
+    } catch (err) { const ok = wrapSelection({ fontSize: px }); if (!ok) editor.style.fontSize = px; }
+  } else { editor.style.fontSize = px; }
+};
+
+fontColor.onchange=e=>document.execCommand('foreColor',false,e.target.value);
+lineHeightRange.oninput=e=>{const v=e.target.value;applyToBlocks({lineHeight:v})};
+headingSel.onchange=e=>document.execCommand('formatBlock',false,e.target.value);
+indentRange.oninput=e=>applyToBlocks({marginLeft:e.target.value+'em'});
+narrowBtn.onclick=()=>{editor.style.maxWidth='640px'};
+wideBtn.onclick=()=>{editor.style.maxWidth='860px'};
+editor.addEventListener('input',()=>{if(autoSave)saveDoc();updateStats()});
+refBtn.onclick=()=>{const visible=getComputedStyle(refPanel).display!=='none';refPanel.style.display=visible?'none':'block'};
+refClose.onclick=()=>{refPanel.style.display='none'};
+(function(){let dx=0,dy=0,dragging=false;refHeader.addEventListener('mousedown',e=>{dragging=true;dx=e.clientX-refPanel.offsetLeft;dy=e.clientY-refPanel.offsetTop;e.preventDefault()});document.addEventListener('mousemove',e=>{if(!dragging)return;refPanel.style.left=(e.clientX-dx)+'px';refPanel.style.top=(e.clientY-dy)+'px'});document.addEventListener('mouseup',()=>dragging=false)})();
+(function(){let resizing=false,sx=0,sy=0,sw=0,sh=0;refResize.addEventListener('mousedown',e=>{resizing=true;sx=e.clientX;sy=e.clientY;sw=refPanel.offsetWidth;sh=refPanel.offsetHeight;e.preventDefault();e.stopPropagation()});document.addEventListener('mousemove',e=>{if(!resizing)return;refPanel.style.width=(sw+(e.clientX-sx))+'px';refPanel.style.height=(sh+(e.clientY-sy))+'px'});document.addEventListener('mouseup',()=>resizing=false)})();
+refImportBtn.onclick=()=>refInput.click();
+refInput.onchange=async e=>{const f=e.target.files[0];if(!f) return;if(f.type.startsWith('image/')){const url=URL.createObjectURL(f);const img=new Image();img.src=url;img.style.maxWidth='100%';refContent.appendChild(img)}else{const text=await f.text();if(/<\s*html|<\s*body|<\s*p[\s>]/i.test(text))refContent.insertAdjacentHTML('beforeend',text);else refContent.textContent+="\n"+text}refInput.value=''};
+refPaste.onclick=async()=>{try{const items=await navigator.clipboard.read();for(const it of items){for(const t of it.types){const blob=await it.getType(t);if(t.startsWith('image/')){const url=URL.createObjectURL(blob);const img=new Image();img.src=url;img.style.maxWidth='100%';refContent.appendChild(img)}else{const text=await blob.text();if(/<\s*html|<\s*body|<\s*p[\s>]/i.test(text))refContent.insertAdjacentHTML('beforeend',text);else refContent.textContent+="\n"+text}}}}catch(err){} };
+refDeleteSel.onclick=()=>{const sel=window.getSelection();if(sel&&sel.rangeCount>0){const r=sel.getRangeAt(0);if(refPanel.contains(r.commonAncestorContainer))r.deleteContents()}};refClear.onclick=()=>{refContent.innerHTML=''};
+
+(function initDefaults(){ if(!localStorage.getItem(saveKey)){ editor.style.fontFamily = DEFAULT_FONT; editor.style.fontSize = DEFAULT_FONTSIZE_PX; editor.style.lineHeight = DEFAULT_LINEHEIGHT; fontFamilySel.value = 'Songti SC, Songti TC, STSong, serif'; fontSizeRange.value = parseInt(DEFAULT_FONTSIZE_PX,10); lineHeightRange.value = DEFAULT_LINEHEIGHT; highlightColor.value = DEFAULT_HIGHLIGHT; } loadDoc(); updateStats(); })();
+
+// updated: font import via select last option
+let lastFontVal='';
+fontFamilySel.addEventListener('focus',()=>{lastFontVal=fontFamilySel.value});
+fontFamilySel.addEventListener('change',e=>{
+  const v=e.target.value;
+  if(!v) return;
+  if(v==='__import__'){
+    fontFamilySel.value = lastFontVal || '';
+    fontUploadInput.click();
+    return;
+  }
+  try{const sel=window.getSelection();if(sel&&sel.rangeCount>0&&!sel.isCollapsed){document.execCommand('styleWithCSS',false,true);document.execCommand('fontName',false,v);document.execCommand('styleWithCSS',false,false)}else{editor.style.fontFamily=v}}catch(err){editor.style.fontFamily=v}
+});
+
+fontUploadInput.onchange = async e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const name = f.name.replace(/\.[^.]+$/, '');
+  const safe = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g,'_') + '_' + Date.now();
+  const url = URL.createObjectURL(f);
+  try{
+    const ff = new FontFace(safe, `url(${url})`);
+    await ff.load();
+    document.fonts.add(ff);
+    const options = Array.from(fontFamilySel.querySelectorAll('option'));
+    const importIdx = options.findIndex(o=>o.value==='__import__');
+    const opt = document.createElement('option'); opt.value = `'${safe}'`; opt.textContent = name + '（已导入）';
+    if(importIdx>=0) fontFamilySel.insertBefore(opt, options[importIdx]); else fontFamilySel.appendChild(opt);
+    fontFamilySel.value = opt.value;
+    try{document.execCommand('styleWithCSS',false,true);document.execCommand('fontName',false,opt.value);document.execCommand('styleWithCSS',false,false)}catch(e){editor.style.fontFamily=opt.value}
+  }catch(err){alert('字体加载失败')}
+  e.target.value='';
+};
+
+</script>
+</body>
+</html>
